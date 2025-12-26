@@ -143,4 +143,78 @@ public final class Rules {
   public static <K, V> StructRule.Builder<K, V> struct() {
     return StructRule.builder();
   }
+
+  // ===== ARRAY RULES =====
+
+  public static <T> Rule<T[]> arrayNotNull() {
+    return ArrayRules.notNull();
+  }
+
+  public static <T> Rule<T[]> arrayNotEmpty() {
+    return ArrayRules.notEmpty();
+  }
+
+  public static <T> Rule<T[]> arrayLength(int exactLength) {
+    return ArrayRules.length(exactLength);
+  }
+
+  public static <T> Rule<T[]> arrayLengthBetween(int min, int max) {
+    return ArrayRules.lengthBetween(min, max);
+  }
+
+  public static <T> Rule<T[]> arrayMaxLength(int max) {
+    return ArrayRules.maxLength(max);
+  }
+
+  public static <T> Rule<T[]> arrayAllElements(Rule<T> elementRule) {
+    return ArrayRules.allElements(elementRule);
+  }
+
+  public static <T> Rule<T[]> arrayAnyElement(Rule<T> elementRule) {
+    return ArrayRules.anyElement(elementRule);
+  }
+
+  public static <T> Rule<T[]> arrayNoNullElements() {
+    return ArrayRules.noNullElements();
+  }
+
+  public static Rule<byte[]> bytesNotNull() {
+    return ArrayRules.bytesNotNull();
+  }
+
+  public static Rule<byte[]> bytesNotEmpty() {
+    return ArrayRules.bytesNotEmpty();
+  }
+
+  public static Rule<byte[]> bytesLength(int exactLength) {
+    return ArrayRules.bytesLength(exactLength);
+  }
+
+  public static Rule<byte[]> bytesMaxLength(int max) {
+    return ArrayRules.bytesMaxLength(max);
+  }
+
+  public static Rule<byte[]> bytesSecureEquals(byte[] expected) {
+    return ArrayRules.secureEquals(expected);
+  }
+
+  public static Rule<int[]> intsNotNull() {
+    return ArrayRules.intsNotNull();
+  }
+
+  public static Rule<int[]> intsMaxLength(int max) {
+    return ArrayRules.intsMaxLength(max);
+  }
+
+  public static Rule<int[]> intsNonNegative() {
+    return ArrayRules.intsNonNegative();
+  }
+
+  public static Rule<double[]> doublesFinite() {
+    return ArrayRules.doublesFinite();
+  }
+
+  public static Rule<double[]> doublesNotNaN() {
+    return ArrayRules.doublesNotNaN();
+  }
 }
