@@ -18,13 +18,9 @@ public final class ValidationState {
     this.depth = 0;
     this.visited = ctx.cycleDetection() ? new Object[INITIAL_CAPACITY] : null;
     this.visitedCount = 0;
-
-    // Compute deadline with overflow protection.
-    // System.nanoTime() can be any value including near Long.MAX_VALUE.
     long timeout = ctx.timeoutNanos();
     if (timeout > 0) {
       long now = System.nanoTime();
-      // Saturating addition: if overflow would occur, use MAX_VALUE
       this.deadlineNanos = (Long.MAX_VALUE - now < timeout)
           ? Long.MAX_VALUE
           : now + timeout;
@@ -47,18 +43,15 @@ public final class ValidationState {
     checkTimeout();
 
     if (depth >= ctx.maxDepth()) {
-      // System-level limit, use systemError for structured propagation
       return ValidationResult.systemError("Maximum validation depth exceeded");
     }
 
     if (ctx.cycleDetection() && value != null) {
       if (visitedCount >= ctx.maxTrackedObjects()) {
-        // System-level limit, use systemError for structured propagation
         return ValidationResult.systemError("Maximum tracked objects exceeded");
       }
 
       if (containsIdentity(value)) {
-        // System-level detection, use systemError for structured propagation
         return ValidationResult.systemError("Cyclic reference detected");
       }
 
@@ -83,7 +76,6 @@ public final class ValidationState {
     checkTimeout();
 
     if (size > ctx.maxCollectionSize()) {
-      // System-level limit, use systemError for structured propagation
       return ValidationResult.systemError("Collection size exceeds maximum allowed");
     }
     return ValidationResult.valid();

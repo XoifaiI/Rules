@@ -28,7 +28,7 @@ public final class StructRule<K, V> {
           return ValidationResult.invalid("Value is null");
         }
 
-        Map<K, V> snapshot = new LinkedHashMap<>(value);
+        Map<K, V> snapshot = createSecureSnapshot(value);
 
         if (strict) {
           Set<K> allowed = fields.keySet();
@@ -71,7 +71,7 @@ public final class StructRule<K, V> {
           return ValidationResult.invalid("Value is null");
         }
 
-        Map<K, V> snapshot = new LinkedHashMap<>(value);
+        Map<K, V> snapshot = createSecureSnapshot(value);
 
         ValidationResult sizeCheck = state.checkCollectionSize(snapshot.size());
         if (sizeCheck.isInvalid()) {
@@ -144,6 +144,22 @@ public final class StructRule<K, V> {
         }
       }
     };
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<K, V> createSecureSnapshot(Map<K, V> value) {
+    if (value instanceof SecureHashMap) {
+      return value;
+    }
+
+    if (!value.isEmpty()) {
+      K sampleKey = value.keySet().iterator().next();
+      if (sampleKey instanceof String) {
+        return (Map<K, V>) SecureHashMap.copyOf((Map<String, ?>) value);
+      }
+    }
+
+    return new LinkedHashMap<>(value);
   }
 
   public static final class Builder<K, V> {

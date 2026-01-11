@@ -758,9 +758,13 @@ public final class ArrayRules {
         if (Double.isNaN(min) || Double.isNaN(max)) {
             throw new IllegalArgumentException("bounds cannot be NaN");
         }
+        if (Double.isInfinite(min) || Double.isInfinite(max)) {
+            throw new IllegalArgumentException("bounds cannot be infinite");
+        }
         if (min > max) {
             throw new IllegalArgumentException("min cannot exceed max");
         }
+        
         return value -> {
             if (value == null) {
                 return ValidationResult.invalid(NULL_MSG);

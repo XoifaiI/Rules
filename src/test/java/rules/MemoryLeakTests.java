@@ -213,12 +213,10 @@ public final class MemoryLeakTests {
 
         List<WeakReference<Object>> refs = new ArrayList<>();
 
-        // Force multiple array resizes by validating many objects
         for (int i = 0; i < 500; i++) {
           Object obj = new HashMap<>();
           refs.add(new WeakReference<>(obj));
 
-          // Deep validation to trigger enterScope/exitScope
           Rule<Object> rule = ObjectRules.notNull();
           ctx.validate(obj, rule);
         }
@@ -294,7 +292,6 @@ public final class MemoryLeakTests {
       test("deeply chained rules no retention", () -> {
         List<WeakReference<String>> refs = new ArrayList<>();
 
-        // Build a chain of 100 rules
         Rule<String> rule = StringRules.notEmpty();
         for (int i = 0; i < 99; i++) {
           rule = rule.and(StringRules.minLength(1));
@@ -343,7 +340,7 @@ public final class MemoryLeakTests {
         for (int i = 0; i < ITERATIONS; i++) {
           String s = "any_fail_" + i + "_" + System.nanoTime();
           refs.add(new WeakReference<>(s));
-          rule.validate(s); // All fail
+          rule.validate(s);
         }
 
         forceGc();
@@ -630,7 +627,7 @@ public final class MemoryLeakTests {
         Rule<Object> rule = ObjectRules.instanceOf(String.class);
 
         for (int i = 0; i < ITERATIONS; i++) {
-          Object obj = new HashMap<>(); // Not a String
+          Object obj = new HashMap<>();
           refs.add(new WeakReference<>(obj));
           rule.validate(obj);
         }

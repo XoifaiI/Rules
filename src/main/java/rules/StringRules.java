@@ -1,9 +1,9 @@
 package rules;
 
 import com.google.re2j.Pattern;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public final class StringRules {
 
@@ -11,8 +11,46 @@ public final class StringRules {
   private static final int MAX_REGEX_INPUT_LENGTH = 10_000;
   private static final int MAX_CACHED_PATTERNS = 256;
 
-  private static final ConcurrentHashMap<String, Pattern> PATTERN_CACHE = new ConcurrentHashMap<>();
-  private static final AtomicInteger CACHE_SIZE = new AtomicInteger(0);
+  private static final class PatternCache {
+    private final int maxSize;
+    private final Map<String, Pattern> cache;
+
+    PatternCache(int maxSize) {
+      this.maxSize = maxSize;
+      this.cache = new LinkedHashMap<String, Pattern>(maxSize, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, Pattern> eldest) {
+          return size() > PatternCache.this.maxSize;
+        }
+      };
+    }
+
+    Pattern getOrCompile(String regex) {
+      synchronized (cache) {
+        Pattern cached = cache.get(regex);
+        if (cached != null) {
+          return cached;
+        }
+        Pattern compiled = Pattern.compile(regex);
+        cache.put(regex, compiled);
+        return compiled;
+      }
+    }
+
+    void clear() {
+      synchronized (cache) {
+        cache.clear();
+      }
+    }
+
+    int size() {
+      synchronized (cache) {
+        return cache.size();
+      }
+    }
+  }
+
+  private static final PatternCache PATTERN_CACHE = new PatternCache(MAX_CACHED_PATTERNS);
 
   private static final Pattern UUID_V4 = Pattern.compile(
       "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-"
@@ -62,34 +100,15 @@ public final class StringRules {
   }
 
   private static Pattern getOrCompilePattern(String regex) {
-    Pattern cached = PATTERN_CACHE.get(regex);
-    if (cached != null) {
-      return cached;
-    }
-
-    // If cache is at capacity, compile without caching to prevent unbounded growth.
-    // This is a deliberate choice: we accept repeated compilation rather than
-    // memory exhaustion from cache pollution attacks.
-    if (CACHE_SIZE.get() >= MAX_CACHED_PATTERNS) {
-      return Pattern.compile(regex);
-    }
-
-    // Use computeIfAbsent for atomic insert. The size check above is advisory;
-    // we may slightly exceed MAX_CACHED_PATTERNS under high concurrency, but
-    // this is bounded by the number of concurrent threads, not unbounded.
-    return PATTERN_CACHE.computeIfAbsent(regex, r -> {
-      CACHE_SIZE.incrementAndGet();
-      return Pattern.compile(r);
-    });
+    return PATTERN_CACHE.getOrCompile(regex);
   }
 
   public static void clearPatternCache() {
     PATTERN_CACHE.clear();
-    CACHE_SIZE.set(0);
   }
 
   public static int patternCacheSize() {
-    return CACHE_SIZE.get();
+    return PATTERN_CACHE.size();
   }
 
   public static Rule<String> notNull() {
