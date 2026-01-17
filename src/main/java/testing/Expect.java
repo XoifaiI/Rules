@@ -31,7 +31,7 @@ public final class Expect {
       assertCondition(
           Objects.equals(actualValue, expected),
           String.format("Expected %s to %sbe %s",
-              Readable.format(actualValue), negationTag(), 
+              Readable.format(actualValue), negationTag(),
               Readable.format(expected)));
     }
   }
@@ -110,7 +110,7 @@ public final class Expect {
   }
 
   public void toBeNaN() {
-    boolean isNaN = actualValue instanceof Number number 
+    boolean isNaN = actualValue instanceof Number number
         && Double.isNaN(number.doubleValue());
     assertCondition(
         isNaN,
@@ -188,7 +188,7 @@ public final class Expect {
     assertCondition(
         expectedType.isInstance(actualValue),
         String.format("Expected %s to %sbe instance of %s",
-            Readable.format(actualValue), negationTag(), 
+            Readable.format(actualValue), negationTag(),
             expectedType.getSimpleName()));
   }
 
@@ -202,13 +202,13 @@ public final class Expect {
   public void toContain(String expectedSubstring) {
     if (!(actualValue instanceof String actualString)) {
       throw new AssertionError(String.format(
-          "toContain requires String but got %s", 
+          "toContain requires String but got %s",
           Readable.format(actualValue)));
     }
     assertCondition(
         actualString.contains(expectedSubstring),
         String.format("Expected %s to %scontain %s",
-            Readable.format(actualValue), negationTag(), 
+            Readable.format(actualValue), negationTag(),
             Readable.format(expectedSubstring)));
   }
 
@@ -223,7 +223,7 @@ public final class Expect {
     if (!requiredType.isInstance(actualValue)) {
       throw new AssertionError(String.format(
           "%s requires %s but got %s",
-          methodName, requiredType.getSimpleName(), 
+          methodName, requiredType.getSimpleName(),
           Readable.format(actualValue)));
     }
   }
@@ -253,7 +253,7 @@ public final class Expect {
   }
 
   public static Condition any(Class<?> expectedType) {
-    return new Condition(expectedType.getSimpleName(), 
+    return new Condition(expectedType.getSimpleName(),
         value -> expectedType.isInstance(value)
             ? Condition.Result.pass()
             : Condition.Result.fail(String.format(

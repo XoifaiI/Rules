@@ -1,9 +1,9 @@
 @echo off
-REM Compile all Java files with RE2j dependency to bin directory
+REM Compile all Java files to bin directory
 
 if not exist bin mkdir bin
 
-javac -cp "lib/*" -d bin src/main/java/rules/*.java src/main/java/testing/*.java
+javac -cp "lib/*" -d bin src/main/java/re2j/*.java src/main/java/rules/*.java src/main/java/testing/*.java
 
 if %ERRORLEVEL% EQU 0 (
     echo Compilation successful - output in bin/

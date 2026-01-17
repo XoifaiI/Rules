@@ -143,7 +143,7 @@ public final class Rules {
   public static <K, V> StructRule.Builder<K, V> struct() {
     return StructRule.builder();
   }
-  
+
   public static <T> Rule<T[]> arrayNotNull() {
     return ArrayRules.notNull();
   }

@@ -764,7 +764,7 @@ public final class ArrayRules {
         if (min > max) {
             throw new IllegalArgumentException("min cannot exceed max");
         }
-        
+
         return value -> {
             if (value == null) {
                 return ValidationResult.invalid(NULL_MSG);

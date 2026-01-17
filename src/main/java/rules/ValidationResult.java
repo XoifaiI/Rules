@@ -27,11 +27,6 @@ public final class ValidationResult {
     return new ValidationResult(false, message, false);
   }
 
-  /**
-   * Creates a system-level error result. System errors (cycle detection,
-   * depth limits, tracked object limits) should always be propagated
-   * without wrapping, regardless of detailedErrors setting.
-   */
   public static ValidationResult systemError(String message) {
     Objects.requireNonNull(message, "message cannot be null");
     return new ValidationResult(false, message, true);
@@ -53,10 +48,6 @@ public final class ValidationResult {
     return !valid;
   }
 
-  /**
-   * Returns true if this is a system-level error that should be propagated
-   * without modification (cycle detection, depth limits, etc.).
-   */
   public boolean isSystemError() {
     return systemError;
   }

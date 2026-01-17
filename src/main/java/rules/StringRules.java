@@ -1,6 +1,6 @@
 package rules;
 
-import com.google.re2j.Pattern;
+import re2j.Pattern;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;

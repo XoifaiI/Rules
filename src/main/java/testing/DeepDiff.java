@@ -75,7 +75,7 @@ public final class DeepDiff {
         return;
       }
       visitedObjects.put(expected, actual);
-      scanMapDifferences(expectedMap, (Map<?, ?>) actual, visitedObjects, 
+      scanMapDifferences(expectedMap, (Map<?, ?>) actual, visitedObjects,
           currentPath, foundDifferences);
       return;
     }
@@ -85,7 +85,7 @@ public final class DeepDiff {
         return;
       }
       visitedObjects.put(expected, actual);
-      scanCollectionDifferences(expectedCollection, (Collection<?>) actual, 
+      scanCollectionDifferences(expectedCollection, (Collection<?>) actual,
           visitedObjects, currentPath, foundDifferences);
       return;
     }
@@ -95,7 +95,7 @@ public final class DeepDiff {
         return;
       }
       visitedObjects.put(expected, actual);
-      scanArrayDifferences(expected, actual, visitedObjects, currentPath, 
+      scanArrayDifferences(expected, actual, visitedObjects, currentPath,
           foundDifferences);
       return;
     }
@@ -122,7 +122,7 @@ public final class DeepDiff {
         continue;
       }
 
-      scanForDifferences(entry.getValue(), actualMap.get(key), visitedObjects, 
+      scanForDifferences(entry.getValue(), actualMap.get(key), visitedObjects,
           keyPath + ": ", foundDifferences);
     }
 
@@ -153,10 +153,10 @@ public final class DeepDiff {
 
     while (expectedIterator.hasNext() && actualIterator.hasNext()) {
       scanForDifferences(
-          expectedIterator.next(), 
-          actualIterator.next(), 
+          expectedIterator.next(),
+          actualIterator.next(),
           visitedObjects,
-          currentPath + "[" + elementIndex + "]: ", 
+          currentPath + "[" + elementIndex + "]: ",
           foundDifferences);
       elementIndex++;
     }

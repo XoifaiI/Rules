@@ -144,7 +144,9 @@ public final class MemoryLeakTests {
             .build();
 
         List<WeakReference<Object>> refs = new ArrayList<>();
-        Rule<Object> exploder = v -> { throw new RuntimeException("boom"); };
+        Rule<Object> exploder = v -> {
+          throw new RuntimeException("boom");
+        };
 
         for (int i = 0; i < ITERATIONS; i++) {
           Object obj = new HashMap<>();
@@ -165,7 +167,10 @@ public final class MemoryLeakTests {
 
         List<WeakReference<Object>> refs = new ArrayList<>();
         Rule<Object> slow = v -> {
-          try { Thread.sleep(10); } catch (InterruptedException e) {}
+          try {
+            Thread.sleep(10);
+          } catch (InterruptedException e) {
+          }
           return ValidationResult.valid();
         };
 

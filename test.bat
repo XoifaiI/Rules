@@ -1,74 +1,76 @@
 @echo off
 REM Compile and run tests
-REM Usage: test.bat [TestClass]
-REM   test.bat              - Run SimpleTest (working tests)
-REM   test.bat Simple       - Run SimpleTest
-REM   test.bat String       - Run StringRulesExploitTest
-REM   test.bat MemoryLeak   - Run MemoryLeakTests
-REM   test.bat all          - Attempt to run all exploit tests
+REM Usage: test.bat [package]
+REM   test.bat              = Run all tests
+REM   test.bat rules        = Run all rules tests
+REM   test.bat re2j         = Run all re2j tests
 
 if not exist bin mkdir bin
 
 echo Compiling core library and testing framework...
-javac -cp "lib/*" -d bin src/main/java/rules/*.java src/main/java/testing/*.java
+javac -cp "lib/*" -d bin src/main/java/re2j/*.java src/main/java/rules/*.java src/main/java/testing/*.java
 if %ERRORLEVEL% NEQ 0 (
     echo Core library compilation failed
     exit /b 1
 )
 
-if "%~1"=="" goto RunSimple
-if /I "%~1"=="all" goto RunAll
-if /I "%~1"=="Simple" goto RunSimple
-if /I "%~1"=="MemoryLeak" goto RunMemoryLeak
-goto RunSpecific
-
-:RunSimple
-echo Compiling SimpleTest...
-javac -cp "bin;lib/*" -d bin src/test/java/rules/SimpleTest.java
+echo Compiling all tests...
+javac -cp "bin;lib/*" -d bin src/test/java/rules/*.java src/test/java/re2j/*.java
 if %ERRORLEVEL% NEQ 0 (
-    echo SimpleTest compilation failed
-    exit /b 1
+    echo Some tests failed to compile.
 )
-echo.
-echo Running SimpleTest...
-echo.
-java -cp "bin;lib/*" rules.SimpleTest
-goto End
+
+if "%~1"=="" goto RunAll
+if /I "%~1"=="rules" goto RunRules
+if /I "%~1"=="re2j" goto RunRE2J
+goto RunAll
 
 :RunAll
-echo Compiling all tests...
-javac -cp "bin;lib/*" -d bin src/test/java/rules/*.java
-if %ERRORLEVEL% NEQ 0 (
-    echo Some tests failed to compile. Running AllExploitTests anyway...
-)
 echo.
-java -cp "bin;lib/*" rules.AllExploitTests
+echo Running all tests...
+echo.
+for %%f in (bin\rules\*Test.class bin\rules\*Tests.class) do (
+    set "name=%%~nf"
+    setlocal enabledelayedexpansion
+    echo Running rules.!name!...
+    java -cp "bin;lib/*;src/test/resources" rules.!name!
+    endlocal
+)
+for %%f in (bin\re2j\*Test.class) do (
+    set "name=%%~nf"
+    setlocal enabledelayedexpansion
+    echo Running re2j.!name!...
+    java -cp "bin;lib/*;src/test/resources" re2j.!name!
+    endlocal
+)
 goto End
 
-:RunMemoryLeak
-echo Compiling MemoryLeakTests...
-javac -cp "bin;lib/*" -d bin src/test/java/rules/MemoryLeakTests.java
-if %ERRORLEVEL% NEQ 0 (
-    echo MemoryLeakTests compilation failed
-    exit /b 1
+:RunRules
+echo.
+echo Running rules tests...
+echo.
+for %%f in (bin\rules\*Test.class bin\rules\*Tests.class) do (
+    set "name=%%~nf"
+    setlocal enabledelayedexpansion
+    echo Running rules.!name!...
+    java -cp "bin;lib/*;src/test/resources" rules.!name!
+    endlocal
 )
-echo.
-echo Running MemoryLeakTests - chaos engineering memory leak detection...
-echo.
-java -cp "bin;lib/*" rules.MemoryLeakTests
 goto End
 
-:RunSpecific
-echo Compiling %~1RulesExploitTest...
-javac -cp "bin;lib/*" -d bin src/test/java/rules/%~1RulesExploitTest.java 2>&1
-if %ERRORLEVEL% NEQ 0 (
-    echo Compilation failed for %~1RulesExploitTest
-    exit /b 1
+:RunRE2J
+echo.
+echo Running re2j tests...
+echo.
+for %%f in (bin\re2j\*Test.class) do (
+    set "name=%%~nf"
+    setlocal enabledelayedexpansion
+    echo Running re2j.!name!...
+    java -cp "bin;lib/*;src/test/resources" re2j.!name!
+    endlocal
 )
-echo.
-echo Running %~1RulesExploitTest...
-echo.
-java -cp "bin;lib/*" rules.%~1RulesExploitTest
 goto End
 
 :End
+echo.
+echo Tests complete.
