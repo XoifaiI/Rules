@@ -35,12 +35,10 @@
     </scm>
 
     <properties>
-        <maven.compiler.source>25</maven.compiler.source>
-        <maven.compiler.target>25</maven.compiler.target>
+        <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <gpg.keyname>E095CB0D</gpg.keyname>
     </properties>
-
     <dependencies>
         <dependency>
             <groupId>com.google.re2j</groupId>
