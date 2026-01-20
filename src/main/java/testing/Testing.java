@@ -173,10 +173,10 @@ public final class Testing {
         String formattedDuration = formatDuration(elapsedMicros);
 
         if (caughtError == null) {
-            /*System.out.printf("%s %s [%s]%n",
+        System.out.printf("%s %s [%s]%n",
           greenBold("PASS"),
           formattedPath,
-          formattedDuration);*/
+          formattedDuration);
         } else {
             failedCount.incrementAndGet();
             System.err.printf("%s %s [%s]%n",
