@@ -65,14 +65,11 @@ public final class SecureHashMap<K, V> extends AbstractMap<K, V> {
             return 0;
         }
 
-        byte[] data;
-        if (key instanceof String) {
-            data = ((String) key).getBytes(StandardCharsets.UTF_8);
-        } else if (key instanceof byte[]) {
-            data = (byte[]) key;
-        } else {
-            data = key.toString().getBytes(StandardCharsets.UTF_8);
-        }
+        byte[] data = switch (key) {
+            case String s -> s.getBytes(StandardCharsets.UTF_8);
+            case byte[] bytes -> bytes;
+            default -> key.toString().getBytes(StandardCharsets.UTF_8);
+        };
 
         long hash = sipHash24(data);
 
@@ -392,8 +389,10 @@ public final class SecureHashMap<K, V> extends AbstractMap<K, V> {
         public boolean equals(Object o) {
             if (o == this)
                 return true;
+
             if (!(o instanceof Entry<?, ?> e))
                 return false;
+
             return Objects.equals(key, e.getKey()) && Objects.equals(value, e.getValue());
         }
 
@@ -492,11 +491,29 @@ public final class SecureHashMap<K, V> extends AbstractMap<K, V> {
         }
     }
 
+    @Override
     public boolean remove(Object key, Object value) {
-        Node<K, V> node = getNode(key);
-        if (node != null && Objects.equals(node.value, value)) {
-            remove(key);
-            return true;
+        int hash = secureHash(key);
+        int index = indexFor(hash, table.length);
+
+        Node<K, V> prev = null;
+        Node<K, V> node = table[index];
+
+        while (node != null) {
+            if (node.hash == hash && Objects.equals(node.key, key)) {
+                if (Objects.equals(node.value, value)) {
+                    if (prev == null) {
+                        table[index] = node.next;
+                    } else {
+                        prev.next = node.next;
+                    }
+                    size--;
+                    return true;
+                }
+                return false;
+            }
+            prev = node;
+            node = node.next;
         }
         return false;
     }
