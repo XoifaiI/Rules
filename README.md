@@ -1,206 +1,90 @@
 # Rules
 
-A zero dependency Java validation library that actually works in production. Ships with a patched fork of RE2J for regex so you don't have to worry about ReDoS attacks blowing up your servers.
-
-## What This Actually Does
-
-Most validation libraries are either too simple to be useful or so bloated they become a liability. Rules sits in the middle which is where you want to be. You get type safe validation rules that compose together cleanly and a security first design that won't let bad actors crash your system with crafted inputs.
-
-The core idea is straightforward. You define rules, chain them together, and validate data. When something fails you get back a result telling you what went wrong. No exceptions flying around unless you explicitly want them.
+A small validation library for Java 26. A rule is one check on a value; rules join with `and`, `or`,
+`all`, `any` and `none`; a struct rule describes the shape of a map. A rule answers a `Verdict`, which
+is either `Passed` or `Failed` with a path and a reason, so the caller can say exactly which field or
+element refused and why.
 
 ```java
 Rule<String> username = Rules.all(
-    StringRules.notBlank(),
-    StringRules.lengthBetween(3, 20),
-    StringRules.matches("^[a-zA-Z0-9_]+$")
-);
+        StringRules.notBlank(),
+        StringRules.lengthBetween(3, 20),
+        StringRules.matches("[a-zA-Z0-9_]+"));
 
-ValidationResult result = username.validate("jack_dev");
-if (result.isValid()) {
-    // good to go
+switch (username.check("jack dev")) {
+    case Verdict.Passed passed -> proceed();
+    case Verdict.Failed failed -> reject(failed.message());   // "must match [a-zA-Z0-9_]+"
 }
 ```
 
-## Why Bother
+## What it does
 
-Standard Java validation tends to fall apart when you need actual security guarantees. This library was built with adversarial inputs in mind so it handles things that others don't:
+- **Reasons say what was expected and what arrived.** `length must be from 3 to 20, got 2`. A reason
+  never echoes a string, since it may be a secret; it reports lengths and patterns.
+- **Paths for nested data.** A struct failure reads `address.city: must not be blank`; a list failure
+  reads `scores[2]: must be positive, got -1`.
+- **Null is settled at the door.** Rules take non null values, and the package is `@NullMarked`. The one
+  place null is allowed is `Rules.optional(rule)`, which passes null and checks everything else.
+- **Regex in linear time.** `StringRules.matches` and `containsMatch` use RE2 syntax through
+  [RE2J](https://github.com/google/re2j), so no input can make a pattern run long. A pattern that does
+  not parse is refused when the rule is made.
+- **Bounded work on untrusted input.** Put a size rule before an element rule:
+  `Rules.all(CollectionRules.maxSize(10_000), CollectionRules.each(item))`.
+- **Numbers compared without rounding.** A bound given as a `long` compares integral values exactly and
+  floating values as floating; a bound given as a `double` compares everything as a double. NaN fails
+  every bound.
+- **Secrets compared in constant time.** `Rules.secureEquals` for strings and byte arrays.
 
-- **HashDoS Protection** which means your HashMaps won't become linked lists when someone sends crafted keys. The SecureHashMap uses SipHash-2-4 with random keys so collision attacks don't work.
+## Structs
 
-- **ReDoS Prevention** since the bundled RE2J fork guarantees linear time matching. Regular Java regex can hang forever on evil patterns but this won't. The fork includes patches for vulnerabilities found in the original Google implementation.
+```java
+Struct address = Struct.of(
+        Field.required("city", Rules.ofType(String.class, StringRules.notBlank())),
+        Field.optional("postcode", Rules.ofType(String.class, StringRules.length(7))));
 
-- **Timing Attack Resistance** with constant time comparison functions for secrets. Comparing passwords or tokens the normal way leaks information through timing differences.
+Struct player = Struct.of(
+        Field.required("name", Rules.ofType(String.class, StringRules.lengthBetween(3, 20))),
+        Field.required("level", Rules.ofType(Number.class, NumberRules.between(1, 100))),
+        Field.optional("address", Struct.nested(address)))
+    .strict();   // refuses fields that were not named
+```
 
-- **Cycle Detection** so self referential data structures don't cause stack overflows during validation.
+A required field must be present with a value. An optional field is checked only when present. A value
+of the wrong type fails with `level: must be a Number, got String`.
 
-- **Timeout Support** which lets you cap how long validation can run. Useful when validating untrusted data that might be designed to waste resources.
+## Rules
+
+| class | rules |
+|---|---|
+| `Rules` | `all`, `any`, `none`, `when`, `optional`, `equalTo`, `oneOf`, `ofType`, `secureEquals` |
+| `Rule` | `and`, `or`, `not`, `on` (check a part of a larger value) |
+| `StringRules` | `notEmpty`, `notBlank`, `length`, `lengthBetween`, `minLength`, `maxLength`, `matches`, `containsMatch`, `startsWith`, `endsWith`, `contains`, `uuid` |
+| `NumberRules` | `between`, `min`, `max`, `positive`, `notNegative`, `negative`, `finite`, `whole` |
+| `CollectionRules` | `notEmpty`, `size`, `sizeBetween`, `minSize`, `maxSize`, `each`, `any`, `none` |
+| `MapRules` | `notEmpty`, `maxSize`, `keys`, `values` |
+| `Struct` | `of`, `strict`, `nested`, with `Field.required` and `Field.optional` |
+
+A bad argument to a rule factory, a negative length or a max below its min, is misuse and throws
+`IllegalArgumentException` where the rule is made. A refusal at check time is never an exception.
+
+## Build
+
+```
+./gradlew check
+```
+
+Gradle 9 with the Kotlin DSL on a JDK 26 toolchain. `check` compiles with `-Xlint:all -Werror`, Error
+Prone and NullAway at error, verifies formatting with palantir-java-format, and runs the tests under
+JUnit 6 with AssertJ.
 
 ## Installation
 
-### Maven
-
-```xml
-<dependency>
-    <groupId>io.github.xoifaii</groupId>
-    <artifactId>rules</artifactId>
-    <version>1.0.0</version>
-</dependency>
+```kotlin
+implementation("io.github.xoifaii:rules:2.0.0")
 ```
 
-### Manual
-
-Clone the repo and compile:
-
-```bash
-# Windows
-build.bat
-
-# Or manually
-mkdir bin
-javac -d bin src/main/java/re2j/*.java src/main/java/rules/*.java src/main/java/testing/*.java
-```
-
-Add the bin directory to your classpath and you're done.
-
-## Documentation
-
-Full API documentation lives in the [Wiki](../../wiki). That covers everything from basic usage to advanced patterns like struct validation and custom rule composition.
-
-## Core Concepts
-
-### Rules
-
-A rule is just a function that takes a value and returns valid or invalid. The interface is minimal:
-
-```java
-@FunctionalInterface
-public interface Rule<T> {
-    ValidationResult validate(T value);
-}
-```
-
-You can write rules inline as lambdas or use the built in ones. Either way they compose the same.
-
-### Results
-
-ValidationResult tells you what happened. It's either valid or invalid with a message explaining why. There's also a system error state for when validation itself fails due to resource limits or cycles.
-
-```java
-ValidationResult result = rule.validate(input);
-
-if (result.isValid()) {
-    proceed();
-} else {
-    log(result.messageOrDefault("validation failed"));
-}
-```
-
-### Composition
-
-Rules chain together with `and`, `or`, and `negate`. The `Rules` class has `all`, `any`, and `none` for combining multiple rules at once.
-
-```java
-Rule<String> secure = Rules.all(
-    StringRules.minLength(12),
-    StringRules.matches("[A-Z]"),
-    StringRules.matches("[a-z]"),
-    StringRules.matches("[0-9]"),
-    StringRules.matches("[^a-zA-Z0-9]")
-);
-```
-
-### Stateful Validation
-
-When you need protection against malicious inputs use ValidationContext. It tracks depth, detects cycles, enforces size limits, and supports timeouts.
-
-```java
-ValidationContext ctx = ValidationContext.builder()
-    .maxDepth(32)
-    .maxCollectionSize(10_000)
-    .cycleDetection(true)
-    .timeout(Duration.ofSeconds(5))
-    .build();
-
-ValidationResult result = ctx.validateTyped(data, rule);
-```
-
-## Available Rules
-
-### Strings
-`notNull`, `notEmpty`, `notBlank`, `length`, `lengthBetween`, `minLength`, `maxLength`, `matches`, `matchesExactly`, `matchesPattern`, `uuidV4`, `startsWith`, `endsWith`, `contains`
-
-### Numbers
-`finite`, `notNaN`, `isNaN`, `isInfinite`, `integer`, `positive`, `negative`, `nonNegative`, `nonPositive`, `between`, `betweenExclusive`, `min`, `max`, `closeTo`
-
-### Objects
-`notNull`, `isNull`, `instanceOf`, `optional`, `oneOf`, `validEnum`, `equalTo`, `notEqualTo`, `secureEquals`, `secureEqualsBytes`
-
-### Collections
-`notEmpty`, `size`, `sizeBetween`, `minSize`, `maxSize`, `allMatch`, `anyMatch`, `noneMatch`, `contains`, `mapNotEmpty`, `mapSize`, `allKeys`, `allValues`, `containsKey`
-
-### Arrays
-`notNull`, `notEmpty`, `length`, `lengthBetween`, `minLength`, `maxLength`, `allElements`, `anyElement`, `noElements`, `noNullElements`, `contains`, `secureEquals`, `validRange`, `isArrayOf`, `isRectangular`
-
-Primitive array variants exist for `byte[]`, `int[]`, `long[]`, and `double[]` with type specific checks like `bytesInRange`, `intsNonNegative`, `doublesFinite`, and `doublesNotNaN`.
-
-### Structs
-
-For validating map shaped data with known fields:
-
-```java
-Rule<Map<String, Object>> userRule = StructRule.<String, Object>builder()
-    .field("name", v -> StringRules.notBlank().validate((String) v))
-    .field("age", v -> NumberRules.between(0, 150).validate((Number) v))
-    .optionalField("email", v -> StringRules.contains("@").validate((String) v))
-    .strict()
-    .toRule();
-```
-
-## Security Features
-
-### SecureHashMap
-
-Drop in replacement for HashMap that resists hash collision attacks. Uses SipHash-2-4 with per instance random keys.
-
-```java
-Map<String, Object> safe = new SecureHashMap<>();
-safe.put("key", value);
-```
-
-### Constant Time Comparison
-
-For comparing secrets without leaking timing information:
-
-```java
-Rule<String> tokenRule = ObjectRules.secureEquals(expectedToken);
-Rule<byte[]> keyRule = ArrayRules.secureEquals(expectedKey);
-```
-
-### Patched RE2J
-
-The included RE2J fork has fixes for vulnerabilities in the original Google implementation. It guarantees O(n) matching time which means no regex can cause exponential blowup regardless of the pattern or input.
-
-## Running Tests
-
-```bash
-# All tests
-test.bat
-
-# Just rules tests
-test.bat rules
-
-# Just regex tests
-test.bat re2j
-```
-
-## Project Structure
-
-```
-src/main/java/
-  re2j/       # Patched RE2J regex engine
-  rules/      # Validation library
-  testing/    # Test framework
-```
+The module name is `io.github.xoifaii.rules`. RE2J is an implementation detail and never appears in a
+public signature.
 
 ## License
 

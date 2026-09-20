@@ -1,0 +1,18 @@
+{
+    "java.compile.nullAnalysis.mode": "disabled",
+    "files.eol": "\n",
+    "files.exclude": {
+        "**/.gradle": true,
+        "**/build": true,
+        "**/bin": true,
+        ".gitattributes": true,
+        ".gitignore": true,
+        "gradle.properties": true,
+        "gradle/wrapper": true,
+        "gradlew": true,
+        "gradlew.bat": true,
+        "settings.gradle.kts": true,
+        "LICENSE": true,
+        "src/test/resources/junit-platform.properties": true
+    }
+}

@@ -1,0 +1,31 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Gradle: check",
+            "type": "shell",
+            "command": "./gradlew check",
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": ["$gradle"],
+            "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+            "detail": "Compile with every check at error, verify formatting, run the tests. Ctrl+Shift+B."
+        },
+        {
+            "label": "Gradle: format",
+            "type": "shell",
+            "command": "./gradlew spotlessApply",
+            "problemMatcher": [],
+            "presentation": { "reveal": "silent", "panel": "dedicated" },
+            "detail": "Reformat every Java file with palantir-java-format. Run before a commit."
+        },
+        {
+            "label": "Gradle: test",
+            "type": "shell",
+            "command": "./gradlew test",
+            "group": "test",
+            "problemMatcher": ["$gradle"],
+            "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+            "detail": "Tests only, without the formatter and lint gates."
+        }
+    ]
+}
