@@ -1,18 +1,22 @@
-# Compiled class files
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Compiled output from an IDE or a bare javac
 bin/
+out/
 *.class
 
-# Package files
-*.jar
-!lib/*.jar
-
-# IDE
+# Other IDEs (VS Code tasks and settings are shared, so .vscode/ is tracked)
 .idea/
 *.iml
-.vscode/
 .settings/
 .project
 .classpath
+.factorypath
+
+# Maven leftovers from 1.x
 target/
 
 # OS
